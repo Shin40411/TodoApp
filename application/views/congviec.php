@@ -61,13 +61,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="id_truong_sort">Trường</label>
-                                        <select name="id_truong_sort" id="id_truong_sort" class="form-control">
+                                        <select name="id_truong_sort" id="id_truong_sort" class="form-control" onchange="autoSortSchool(this.value)">
                                             <option value="">Tất cả</option>
                                             <?php foreach ($truong_hoc as $type) : ?>
-                                            <option value="<?php echo $type['id_truong']; ?>" <?php echo isset($sort_params['id_truong']) && $sort_params['id_truong'] == $type['id_truong'] ? 'selected' : ''; ?>>
-                                                <?php echo $type['ten_truong']; ?>
-                                            </option>
-                                        <?php endforeach; ?>
+                                                <option value="<?php echo $type['id_truong']; ?>" <?php echo isset($sort_params['id_truong']) && $sort_params['id_truong'] == $type['id_truong'] ? 'selected' : ''; ?>>
+                                                    <?php echo $type['ten_truong']; ?>
+                                                </option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
                                 </div>
@@ -89,9 +89,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
                             </button>
                         </div>
                         <div class="col-md-8 d-flex-end">
-                            <a class="btn btn-warning" data-toggle="modal" href="#" disabled>
+                            <!-- <a class="btn btn-warning" data-toggle="modal" href="#" disabled>
                                 <i class="glyphicon glyphicon-plus" style="font-size: 15px;"></i>Nhân bản
-                            </a>
+                            </a> -->
                             <a class="btn btn-warning" data-toggle="modal" href="#importEmployeeModel">
                                 <i class="glyphicon glyphicon-import" style="font-size: 15px;"></i>Import file
                             </a>
@@ -137,13 +137,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                     break;
                                 }
                             }
-                            foreach ($truong as $key => $value) {
-                                if ($key == $task['id_phong']) {
-                                    $task['id_truong'] = $value['id_truong'];
-                                    $task['ten_truong'] = $value['ten_truong'];
-                                    break;
-                                }
-                            }
                         ?>
                             <tr>
                                 <td>
@@ -160,7 +153,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                 <td>
                                     <?php echo $task['ten_phong']; ?>
                                 </td>
-                                <td><?php echo $task['ten_truong']; ?>
+                                <td><?php echo isset($ten_truongs[$task['id_congviec']]) ? $ten_truongs[$task['id_congviec']] : 'Kxđ'; ?></td>
                                 <td>
                                     <?php if (in_array(pathinfo($task['file_dinhkem'], PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'gif'])) : ?>
                                         <img src="<?php echo base_url('uploads/' . $task['file_dinhkem']); ?>" alt="attachment" width="100">
@@ -234,16 +227,16 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     </div>
                     <div class="form-group">
                         <label for="id_truong">Trường</label>
-                        <select name="id_truong" class="form-control" aria-readonly="TRUE" disabled>
+                        <select name="id_truong" class="form-control" onchange="autoChangeSchool(this.value)" required>
+                            <option value="">Thuộc trường</option>
+                            <?php foreach ($truong_hoc as $type) : ?>
+                                <option value="<?php echo $type['id_truong']; ?>"><?php echo $type['ten_truong']; ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="id_loai">Phòng</label>
-                        <select name="id_phong" class="form-control" onchange="autoChangeSchool(this.value)" required>
-                            <option value="">Thuộc phòng</option>
-                            <?php foreach ($phong as $type) : ?>
-                                <option value="<?php echo $type['id_phong']; ?>"><?php echo $type['ten_phong']; ?></option>
-                            <?php endforeach; ?>
+                        <select name="id_phong" class="form-control" required>
                         </select>
                     </div>
                     <div class="form-group">
@@ -302,17 +295,17 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="id_loai">Phòng</label>
-                        <select name="id_phong" id="id_phong" class="form-control" onchange="autoChangeSchool(this.value)" required>
-                            <option value="">Thuộc phòng</option>
-                            <?php foreach ($phong as $type) : ?>
-                                <option value="<?php echo $type['id_phong']; ?>"><?php echo $type['ten_phong']; ?></option>
+                        <label for="id_truong">Trường</label>
+                        <select name="id_truong" class="form-control" onchange="autoChangeSchool(this.value)" required>
+                            <option value="">Thuộc trường</option>
+                            <?php foreach ($truong_hoc as $type) : ?>
+                                <option value="<?php echo $type['id_truong']; ?>"><?php echo $type['ten_truong']; ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="id_truong">Trường</label>
-                        <select name="id_truong" id="id_truong" class="form-control" aria-readonly="TRUE" disabled>
+                        <label for="id_loai">Phòng</label>
+                        <select name="id_phong" class="form-control" required>
                         </select>
                     </div>
                     <div class="form-group">

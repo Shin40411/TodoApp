@@ -1,4 +1,5 @@
-var truongSelect = $('select[name="id_truong"]');
+var truongSelect = $('select[name="id_phong"]');
+var truongSort = $('select[name="id_phong_sort"]');
 
 $(document).ready(function () {
     $('[data-toggle="tooltip"]').tooltip();
@@ -72,6 +73,29 @@ $(document).ready(function () {
         });
     });
 
+    function pickSchool(id){
+        $.ajax({
+            url: base_url + "index.php/congviec/get_truong_duoc_chon/" + id,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                var id_truong = data.id_truong;
+                autoChangeSchool(id_truong);
+                $('select[name="id_truong"]').each(function() {
+                    var option = $(this).find('option[value="' + id_truong + '"]');
+                    
+                    if (option.length > 0) {
+                        $(this).val(id_truong);
+                    }
+                });
+            },
+            error: function (xhr, status, error) {
+                var errorMessage = xhr.status + ': ' + xhr.statusText + '\n' + error;
+                alert('Error fetching data - ' + errorMessage);
+            }
+        });
+    }
+
     $('.edittask').on('click', function () {
         var id_congviec = $(this).data('id');
         $('#edit_id_congviec').val(id_congviec);
@@ -88,7 +112,7 @@ $(document).ready(function () {
                 $('#id_loai').val(data.id_loai);
                 $('#id_phong').val(data.id_phong);
 
-                autoChangeSchool(data.id_phong);
+                pickSchool(data.id_phong);
 
                 var ten_congviec_value = $('#ten_congviec').val();
                 var characterTenCount = ten_congviec_value.length;
@@ -384,7 +408,7 @@ function autoChangeSchool(id) {
             success: function (data) {
                 truongSelect.empty();
                 $.each(data, function (index, item) {
-                    truongSelect.append('<option value="' + item.id_truong + '">' + item.ten_truong + '</option>');
+                    truongSelect.append('<option value="' + item.id_phong + '">' + item.ten_phong + '</option>');
                 });
             },
             error: function (xhr, status, error) {
@@ -396,6 +420,31 @@ function autoChangeSchool(id) {
         
     }
 }
+
+function autoSortSchool(id) {
+    truongSort.empty();
+    if (id){
+        $.ajax({
+            url: base_url + "index.php/congviec/get_truong_by_phong/" + id,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                truongSort.empty();
+                truongSort.append('<option value="">Tất cả</option>');
+                $.each(data, function (index, item) {
+                    truongSort.append('<option value="' + item.id_phong + '">' + item.ten_phong + '</option>');
+                });
+            },
+            error: function (xhr, status, error) {
+                var errorMessage = xhr.status + ': ' + xhr.statusText + '\n' + error;
+                alert('Error fetching data - ' + errorMessage);
+            }
+        });
+    }else{
+        
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', (event) => {
     const ngayBatdauInput = document.getElementById('ngay_batdau');

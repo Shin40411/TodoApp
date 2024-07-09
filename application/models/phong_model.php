@@ -37,5 +37,19 @@ class Phong_model extends CI_Model {
         $query = $this->db->get('truong');
         return $query->result_array();
     }
+
+    public function get_phongbytruong($id_truong)
+    {
+        $this->db->where('id_truong', $id_truong);
+        $query = $this->db->get('phong');
+        return $query->result_array();
+    }
+
+    public function get_truonginphong($id_phong) {
+        $this->db->select('id_truong');
+        $this->db->where('id_phong', $id_phong);
+        $query = $this->db->get('phong');
+        return $query->row_array();
+    }    
 }
 ?>

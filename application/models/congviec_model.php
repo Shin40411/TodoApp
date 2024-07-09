@@ -18,6 +18,10 @@ class Congviec_model extends CI_Model {
             $this->db->where('id_loai', $sort_params['id_loai']);
         }
 
+        if (!empty($sort_params['id_phong'])) {
+            $this->db->where('id_phong', $sort_params['id_phong']);
+        }
+
         $this->db->order_by('id_congviec','DESC');
 
         $this->db->limit($limit, $offset);

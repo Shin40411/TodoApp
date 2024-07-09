@@ -4,7 +4,6 @@ class Congviec extends CI_Controller
     public function __construct()
     {
         parent::__construct();
-        $this->load->library('Spreadsheet');
         $this->load->model('congviec_model');
         $this->load->model('loaicongviec_model');
         $this->load->model('truong_model');
@@ -22,7 +21,9 @@ class Congviec extends CI_Controller
         $sort_params = array(
             'ngay_batdau' => trim($this->input->post('ngay_batdau_sort')),
             'ngay_ketthuc' => trim($this->input->post('ngay_ketthuc_sort')),
-            'id_loai' => trim($this->input->post('id_loai_sort'))
+            'id_loai' => trim($this->input->post('id_loai_sort')),
+            'id_truong' => trim($this->input->post('id_truong_sort')),
+            'id_phong' => trim($this->input->post('id_phong_sort'))
         );
 
         $config = array();
@@ -65,18 +66,35 @@ class Congviec extends CI_Controller
         $loaicongviec = array();
         $phongs = array();
         $truong = array();
+        $ten_truongs = array();
         foreach ($data['congviec'] as $task) {
             $loaicongviec[$task['id_loai']] = $this->loaicongviec_model->get_categories_by_id($task['id_loai']);
             $phongs[$task['id_phong']] = $this->phong_model->get_phong_by_id($task['id_phong']);
-            $truongData = $this->truong_model->get_truongbyphong($task['id_phong']);
-            foreach ($truongData as $t) {
-                $truong[$t['id_truong']] = $t;
+
+            $idtruongs = $phongs[$task['id_phong']]['id_truong'];
+            $idtruongArray = explode(',', $idtruongs);
+
+            for ($i = 0; $i < count($idtruongArray); $i++) {
+                $id_truong = $idtruongArray[$i];
+                $truongData = $this->truong_model->get_truongbyphong($id_truong);
+                foreach ($truongData as $t) {
+                    $truong[$t['id_truong']] = $t;
+                }
             }
+
+            $ten_truongs[$task['id_congviec']] = [];
+            foreach ($idtruongArray as $id_school) {
+                if (isset($truong[$id_school])) {
+                    $ten_truongs[$task['id_congviec']][] = $truong[$id_school]['ten_truong'];
+                }
+            }
+            $ten_truongs[$task['id_congviec']] = implode(', ', $ten_truongs[$task['id_congviec']]);
         }
 
         $data['loaicongviec'] = $loaicongviec;
         $data['phongs'] = $phongs;
         $data['truong'] = $truong;
+        $data['ten_truongs'] = $ten_truongs;
         $data['sort_params'] = $sort_params;
         $data['content_view'] = 'congviec';
         $data['pagination'] = $this->pagination->create_links();
@@ -84,9 +102,16 @@ class Congviec extends CI_Controller
         $this->load->view('layout/main', $data);
     }
 
-    public function get_truong_by_phong($id_phong)
+    public function get_truong_by_phong($id_truong)
     {
-        $truong_options = $this->truong_model->get_truongbyphong($id_phong);
+        $truong_options = $this->phong_model->get_phongbytruong($id_truong);
+        echo json_encode($truong_options);
+    }
+
+    public function get_truong_duoc_chon($id_phong)
+    {
+        $id_truong = $this->phong_model->get_truonginphong($id_phong);
+        $truong_options = $this->truong_model->get_truong_by_id($id_truong["id_truong"]);
         echo json_encode($truong_options);
     }
 
@@ -287,13 +312,31 @@ class Congviec extends CI_Controller
                         $rowData[] = $cell->getValue();
                     }
 
-                    $congviec_data = array(
-                        'ten_congviec' => $this->security->xss_clean($rowData[0]),
-                        'chitiet_congviec' => $this->security->xss_clean($rowData[1]),
-                        'ngay_batdau' => date('Y-m-d', \PHPExcel_Shared_Date::ExcelToPHP($rowData[2])),
-                        'ngay_ketthuc' => date('Y-m-d', \PHPExcel_Shared_Date::ExcelToPHP($rowData[3])),
-                        'id_loai' => $this->security->xss_clean($rowData[4])
-                    );
+                    $congviec_data = array();
+
+                    if (!empty($rowData[0])) {
+                        $congviec_data['ten_congviec'] = $this->security->xss_clean($rowData[0]);
+                    }
+
+                    if (!empty($rowData[1])) {
+                        $congviec_data['chitiet_congviec'] = $this->security->xss_clean($rowData[1]);
+                    }
+
+                    if (!empty($rowData[2])) {
+                        $congviec_data['ngay_batdau'] = date('Y-m-d', \PHPExcel_Shared_Date::ExcelToPHP($rowData[2]));
+                    }
+
+                    if (!empty($rowData[3])) {
+                        $congviec_data['ngay_ketthuc'] = date('Y-m-d', \PHPExcel_Shared_Date::ExcelToPHP($rowData[3]));
+                    }
+
+                    if (!empty($rowData[4])) {
+                        $congviec_data['id_loai'] = $this->security->xss_clean($rowData[4]);
+                    }
+
+                    if (!empty($rowData[5])) {
+                        $congviec_data['id_phong'] = $this->security->xss_clean($rowData[5]);
+                    }
                 }
 
                 $this->congviec_model->add_congviec($congviec_data);
@@ -320,6 +363,7 @@ class Congviec extends CI_Controller
         $sheet->setCellValue('D1', 'Ngày bắt đầu');
         $sheet->setCellValue('E1', 'Ngày kết thúc');
         $sheet->setCellValue('F1', 'Loại công việc');
+        $sheet->setCellValue('G1', 'Phòng làm việc');
 
         $headerStyle = array(
             'font' => array(
@@ -343,7 +387,7 @@ class Congviec extends CI_Controller
             )
         );
 
-        $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
         $sheet->getColumnDimension('A')->setWidth(10);
         $sheet->getColumnDimension('B')->setWidth(30);
@@ -351,6 +395,7 @@ class Congviec extends CI_Controller
         $sheet->getColumnDimension('D')->setWidth(15);
         $sheet->getColumnDimension('E')->setWidth(15);
         $sheet->getColumnDimension('F')->setWidth(20);
+        $sheet->getColumnDimension('G')->setWidth(30);
 
         $row = 2;
 
@@ -369,6 +414,11 @@ class Congviec extends CI_Controller
                     $sheet->setCellValue('F' . $row, $getLoai['ten_loai']);
                 }
 
+                $getPhong = $this->phong_model->get_phong_by_id($task['id_phong']);
+                if ($getPhong) {
+                    $sheet->setCellValue('G' . $row, "Phòng " . $getPhong['ten_phong']);
+                }
+
                 $dataStyle = array(
                     'alignment' => array(
                         'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
@@ -380,7 +430,7 @@ class Congviec extends CI_Controller
                         ),
                     ),
                 );
-                $sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray($dataStyle);
+                $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray($dataStyle);
                 $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
                 $row++;
             }
